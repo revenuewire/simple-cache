@@ -1,0 +1,19 @@
+version: '2'
+services:
+  dynamodb:
+    image: instructure/dynamo-local-admin
+
+  test:
+    image: revenuewire/dynamodb-cache:latest
+    build:
+      context: ./
+    links:
+        - dynamodb:dynamodb
+    volumes:
+        - $PWD:/code
+    working_dir: /code
+    command: ./vendor/bin/phpunit
+    environment:
+      - AWS_ACCESS_KEY_ID=[AWS_ACCESS_KEY_ID]
+      - AWS_SECRET_ACCESS_KEY=[AWS_SECRET_ACCESS_KEY]
+

@@ -1,0 +1,12 @@
+language: php
+php:
+  - 7.1
+sudo: required
+services:
+  - docker
+install:
+  - composer install --optimize-autoloader
+script: ./bin/go-test.sh
+after_success:
+  - sudo chmod 777 -R ./build
+  - travis_retry php vendor/bin/coveralls -v
