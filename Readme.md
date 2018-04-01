@@ -31,3 +31,8 @@ The following cache adapters are available:
     $cache->get($k); //null
     $cache->has($k); //false
 ```
+
+# Run unittest
+```bash
+sh ./bin/go-test.sh
+```
