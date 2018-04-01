@@ -1,18 +1,27 @@
 <?php
+/**
+ * Created by IntelliJ IDEA.
+ * User: swang
+ * Date: 2018-04-01
+ * Time: 8:27 AM
+ */
+
 namespace RW;
+
 
 use Psr\SimpleCache\CacheInterface;
 
-/**
- * Class MemCache
- * @package RW
- */
-class MemCache implements CacheInterface
+class FileCache implements CacheInterface
 {
     use SimpleCache;
 
-    private $data = [];
+    private $cacheDir = "/tmp/default-simple-cache-dir";
 
+    function __construct($cacheDir = "/tmp/default-simple-cache-dir")
+    {
+        $this->cacheDir = $cacheDir;
+        mkdir($this->cacheDir,0777);
+    }
 
     /**
      * Fetches a value from the cache.
@@ -30,13 +39,19 @@ class MemCache implements CacheInterface
         if (!$this->isValidKey($key)) {
             throw new SimpleCacheException("Invalid key. Only [a-zA-Z0-9_-] allowed.");
         }
-        
-        $now = time();
+        @include $this->cacheDir . "/$key";
 
-        if (isset($this->data[$key]) && isset($this->data[$key]['expiry']) && ($this->data[$key]['expiry'] === 0 || $this->data[$key]['expiry'] >= $now)) {
-            return $this->data[$key]['value'];
-        } else if (isset($this->data[$key]) && isset($this->data[$key]['expiry']) && ($this->data[$key]['expiry'] < $now)) {
-            unset($this->data[$key]);
+        if(!isset($item)) {
+            return $default;
+        }
+        $now = time();
+        $item = json_decode($item, true);
+
+        if (isset($item['expiry']) && ($item['expiry'] === 0 || $item['expiry'] >= $now)) {
+            return $item['value'];
+        }
+        if (isset($item['expiry']) && ($item['expiry'] < $now)) {
+            @unlink($this->cacheDir . "/$key");
         }
 
         return $default;
@@ -66,12 +81,18 @@ class MemCache implements CacheInterface
             throw new SimpleCacheException("TTL must only be integer greater than 0 or null.");
         }
 
-        $this->data[$key]['value'] = $value;
         if ($ttl <= 0) {
-            $this->data[$key]['expiry'] = 0;
+            $expiry = 0;
         } else {
-            $this->data[$key]['expiry'] = time() + $ttl;
+            $expiry = time() + $ttl;
         }
+
+        $item = json_encode(["value" => $value, "expiry" => $expiry]);
+
+        // Write to temp file first to ensure atomicity
+        $tmp = $this->cacheDir . "/$key." . uniqid('', true) . '.tmp';
+        file_put_contents($tmp, '<?php $item = \'' . $item . "';", LOCK_EX);
+        rename($tmp, $this->cacheDir . "/$key");
 
         return true;
     }
@@ -91,8 +112,8 @@ class MemCache implements CacheInterface
         if (!$this->isValidKey($key)) {
             throw new SimpleCacheException("Invalid key. Only [a-zA-Z0-9_-] allowed.");
         }
-        unset($this->data[$key]);
-        return true;
+
+        return unlink($this->cacheDir . "/$key");
     }
 
     /**
@@ -102,8 +123,8 @@ class MemCache implements CacheInterface
      */
     public function clear()
     {
-        $this->data = [];
-        return true;
+        array_map('unlink', glob($this->cacheDir . "/*"));
+        return rmdir($this->cacheDir);
     }
 
     /**
@@ -127,9 +148,6 @@ class MemCache implements CacheInterface
             throw new SimpleCacheException("Invalid key. Only [a-zA-Z0-9_-] allowed.");
         }
 
-        $now = time();
-        return (isset($this->data[$key])
-                    && isset($this->data[$key]['expiry'])
-                        && ($this->data[$key]['expiry'] === 0 || $this->data[$key]['expiry'] >= $now));
+        return ($this->get($key, null) !== null);
     }
 }

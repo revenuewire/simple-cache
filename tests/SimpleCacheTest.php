@@ -191,14 +191,14 @@ trait SimpleCacheTest
     }
 }
 
-class MemCacheTest extends \PHPUnit\Framework\TestCase
+class ArrayCacheTest extends \PHPUnit\Framework\TestCase
 {
     use SimpleCacheTest;
     public $cache = null;
 
     public function setUp()
     {
-        $this->cache = new \RW\MemCache();
+        $this->cache = new \RW\ArrayCache();
     }
 }
 
@@ -211,5 +211,19 @@ class APCUTest extends \PHPUnit\Framework\TestCase
     {
         $this->cache = new \RW\APCUCache();
         $this->assertSame(true, function_exists('apcu_store'));
+    }
+}
+
+/**
+ * @group file-cache
+ */
+class FileCacheTest extends \PHPUnit\Framework\TestCase
+{
+    use SimpleCacheTest;
+    public $cache = null;
+
+    public function setUp()
+    {
+        $this->cache = new \RW\FileCache("/tmp/unit-test-" . uniqid());
     }
 }
