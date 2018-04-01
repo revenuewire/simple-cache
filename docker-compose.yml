@@ -10,8 +10,8 @@ services:
     links:
         - dynamodb:dynamodb
     volumes:
-        - $PWD:/code
-    working_dir: /code
+        - $PWD:$PWD
+    working_dir: $PWD
     command: ./vendor/bin/phpunit
     environment:
       - AWS_ACCESS_KEY_ID=[AWS_ACCESS_KEY_ID]
