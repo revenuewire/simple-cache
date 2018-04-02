@@ -77,6 +77,25 @@ trait SimpleCacheTest
         self::$cache->has($k);
     }
 
+    public function cacheWrongValueProvider()
+    {
+        return [
+            ["key", ""],
+            ["key1", " "],
+            ["key2", null],
+        ];
+    }
+
+    /**
+     * @expectedException \RW\SimpleCacheException
+     * @expectedExceptionMessage Value cannot be empty.
+     * @dataProvider cacheWrongValueProvider
+     */
+    public function testSetWithWrongValue($k, $v)
+    {
+        self::$cache->set($k, $v);
+    }
+
     /**
      * @throws \Psr\SimpleCache\InvalidArgumentException
      * @expectedException \RW\SimpleCacheException
@@ -208,6 +227,18 @@ trait SimpleCacheTest
         $this->assertSame([], self::$cache->setMultiple([
             "abc" => "abc",
             "bcd*" => "bcd"
+        ]));
+    }
+
+    /**
+     * @expectedExceptionMessage Value cannot be empty.
+     * @expectedException \RW\SimpleCacheException
+     */
+    public function testMultiErrorWithWrongValue()
+    {
+        $this->assertSame([], self::$cache->setMultiple([
+            "abc" => "abc",
+            "bcd" => ""
         ]));
     }
 
