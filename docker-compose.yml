@@ -12,7 +12,7 @@ services:
     volumes:
         - $PWD:$PWD
     working_dir: $PWD
-    command: ./vendor/bin/phpunit
+    command: ./bin/run-test.sh
     environment:
       - AWS_ACCESS_KEY_ID=[AWS_ACCESS_KEY_ID]
       - AWS_SECRET_ACCESS_KEY=[AWS_SECRET_ACCESS_KEY]

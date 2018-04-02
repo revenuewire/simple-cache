@@ -17,6 +17,11 @@ class FileCache implements CacheInterface
 
     private $cacheDir = "/tmp/default-simple-cache-dir";
 
+    /**
+     * FileCache constructor.
+     * @param string $cacheDir
+     * @codeCoverageIgnore
+     */
     function __construct($cacheDir = "/tmp/default-simple-cache-dir")
     {
         $this->cacheDir = $cacheDir;

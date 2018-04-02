@@ -47,12 +47,12 @@ trait SimpleCacheTest
      */
     public function testSet($k, $v, $expected)
     {
-        $this->assertSame($expected, $this->cache->set($k, $v));
-        $this->assertSame($v, $this->cache->get($k));
-        $this->assertSame(true, $this->cache->has($k));
-        $this->assertSame(true, $this->cache->delete($k));
-        $this->assertSame(null, $this->cache->get($k));
-        $this->assertSame(false, $this->cache->has($k));
+        $this->assertSame($expected, self::$cache->set($k, $v));
+        $this->assertSame($v, self::$cache->get($k));
+        $this->assertSame(true, self::$cache->has($k));
+        $this->assertSame(true, self::$cache->delete($k));
+        $this->assertSame(null, self::$cache->get($k));
+        $this->assertSame(false, self::$cache->has($k));
     }
 
     /**
@@ -63,7 +63,7 @@ trait SimpleCacheTest
      */
     public function testSetWithWrongKey($k, $v)
     {
-        $this->cache->set($k, $v);
+        self::$cache->set($k, $v);
     }
 
     /**
@@ -74,7 +74,7 @@ trait SimpleCacheTest
      */
     public function testSetWithWrongKey2($k, $v)
     {
-        $this->cache->has($k);
+        self::$cache->has($k);
     }
 
     /**
@@ -85,12 +85,12 @@ trait SimpleCacheTest
      */
     public function testSetWithWrongKey3($k, $v)
     {
-        $this->cache->get($k);
+        self::$cache->get($k);
     }
 
     public function getWithDefaultValue()
     {
-        $this->assertSame("Default Value", $this->cache->get("none-existing-key", "Default Value"));
+        $this->assertSame("Default Value", self::$cache->get("none-existing-key", "Default Value"));
     }
 
     /**
@@ -101,7 +101,7 @@ trait SimpleCacheTest
      */
     public function testSetWithWrongKey4($k, $v)
     {
-        $this->cache->delete($k);
+        self::$cache->delete($k);
     }
 
     /**
@@ -112,7 +112,7 @@ trait SimpleCacheTest
      */
     public function testSetWithWrongTTL($k, $v, $ttl)
     {
-        $this->cache->set($k, $v, $ttl);
+        self::$cache->set($k, $v, $ttl);
     }
 
     public function testWithTTL()
@@ -121,13 +121,13 @@ trait SimpleCacheTest
         $v = "hello TTL";
         $ttl = 5;
 
-        $this->assertSame(true, $this->cache->set($k, $v, $ttl));
-        $this->assertSame($v, $this->cache->get($k));
-        $this->assertSame(true, $this->cache->has($k));
+        $this->assertSame(true, self::$cache->set($k, $v, $ttl));
+        $this->assertSame($v, self::$cache->get($k));
+        $this->assertSame(true, self::$cache->has($k));
 
         sleep($ttl+1);
-        $this->assertSame(false, $this->cache->has($k));
-        $this->assertSame(null, $this->cache->get($k));
+        $this->assertSame(false, self::$cache->has($k));
+        $this->assertSame(null, self::$cache->get($k));
     }
 
     public function testMulti()
@@ -141,11 +141,11 @@ trait SimpleCacheTest
             "f" => "F",
             "g" => "G",
         ];
-        $this->assertSame(true, $this->cache->setMultiple($data));
-        $this->assertSame($data, $this->cache->getMultiple(array_keys($data)));
+        $this->assertSame(true, self::$cache->setMultiple($data, 100));
+        $this->assertEquals($data, self::$cache->getMultiple(array_keys($data)));
 
-        $this->assertSame(true, $this->cache->deleteMultiple(['a', 'd', 'f']));
-        $this->assertSame([
+        $this->assertSame(true, self::$cache->deleteMultiple(['a', 'd', 'f']));
+        $this->assertEquals([
             "a" => null,
             "b" => "B",
             "c" => "C",
@@ -153,7 +153,7 @@ trait SimpleCacheTest
             "e" => "E",
             "f" => null,
             "g" => "G",
-        ], $this->cache->getMultiple(array_keys($data)));
+        ], self::$cache->getMultiple(array_keys($data)));
 
         $this->assertSame([
             "a" => "Default",
@@ -163,7 +163,9 @@ trait SimpleCacheTest
             "e" => "E",
             "f" => "Default",
             "g" => "G",
-        ], $this->cache->getMultiple(array_keys($data), "Default"));
+        ], self::$cache->getMultiple(array_keys($data), "Default"));
+
+        $this->assertSame("B", self::$cache->get('b'));
     }
 
     public function multiErrorProvider()
@@ -182,35 +184,63 @@ trait SimpleCacheTest
      */
     public function testMultiError($keys)
     {
-        $this->assertSame([], $this->cache->getMultiple($keys));
+        $this->assertSame([], self::$cache->getMultiple($keys));
     }
 
-    public function tearDown()
+    /**
+     * @expectedExceptionMessage TTL must only be integer greater than 0 or null.
+     * @expectedException \RW\SimpleCacheException
+     */
+    public function testMultiErrorWithWrongTTL()
     {
-        $this->assertSame(true, $this->cache->clear());
+        $this->assertSame([], self::$cache->setMultiple([
+            "abc" => "abc",
+            "bcd" => "bcd"
+        ], "hg"));
+    }
+
+    /**
+     * @expectedExceptionMessage Invalid key. Only [a-zA-Z0-9_-] allowed.
+     * @expectedException \RW\SimpleCacheException
+     */
+    public function testMultiErrorWithWrongKey()
+    {
+        $this->assertSame([], self::$cache->setMultiple([
+            "abc" => "abc",
+            "bcd*" => "bcd"
+        ]));
+    }
+
+    /**
+     * Last test
+     */
+    public function testAtLast()
+    {
+        $this->assertSame("B", self::$cache->get('b'));
+        $this->assertSame(true, self::$cache->clear());
+        $this->assertSame(null, self::$cache->get('b', null));
     }
 }
 
 class ArrayCacheTest extends \PHPUnit\Framework\TestCase
 {
     use SimpleCacheTest;
-    public $cache = null;
+    public static $cache = null;
 
-    public function setUp()
+    public static function setUpBeforeClass()
     {
-        $this->cache = new \RW\ArrayCache();
+        self::$cache = new \RW\ArrayCache();
     }
 }
 
 class APCUTest extends \PHPUnit\Framework\TestCase
 {
     use SimpleCacheTest;
-    public $cache = null;
+    public static $cache = null;
 
-    public function setUp()
+    public static function setUpBeforeClass()
     {
-        $this->cache = new \RW\APCUCache();
-        $this->assertSame(true, function_exists('apcu_store'));
+        self::$cache = new \RW\APCUCache();
     }
 }
 
@@ -220,10 +250,30 @@ class APCUTest extends \PHPUnit\Framework\TestCase
 class FileCacheTest extends \PHPUnit\Framework\TestCase
 {
     use SimpleCacheTest;
-    public $cache = null;
+    public static $cache = null;
 
-    public function setUp()
+    public static function setUpBeforeClass()
     {
-        $this->cache = new \RW\FileCache("/tmp/unit-test-" . uniqid());
+        self::$cache = new \RW\FileCache("/tmp/unit-test-" . uniqid());
+    }
+}
+
+/**
+ * Class DynamoCacheTest
+ */
+class DynamoCacheTest extends \PHPUnit\Framework\TestCase
+{
+    use SimpleCacheTest;
+    /** @var $cache \RW\DynamoCache */
+    public static $cache = null;
+
+    public static function setUpBeforeClass()
+    {
+        self::$cache = new \RW\DynamoCache("dynamo-cache", [
+            "region" => "us-west-1",
+            "endpoint" => 'http://dynamodb:8000'
+        ]);
+        //this to ensure we get to lastEvalutedKey section
+        self::$cache->setReadBatchLimit(2);
     }
 }
