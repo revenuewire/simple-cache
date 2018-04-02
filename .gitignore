@@ -16,4 +16,3 @@ supervise/
 vendor
 .env
 build
-composer.lock
