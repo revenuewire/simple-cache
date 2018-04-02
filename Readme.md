@@ -18,9 +18,12 @@ The following cache adapters are available:
 * DyanamoDB
 * File
 
-# Samples
+# Examples
 ```php
 <?php
+    /**
+    * File Cache
+    */
     $cache = new \RW\FileCache("/tmp/unit-test-" . uniqid());
     $k = "hello";
     $v = "world";
@@ -30,9 +33,68 @@ The following cache adapters are available:
     $cache->delete($k); //true
     $cache->get($k); //null
     $cache->has($k); //false
+    
+    /**
+    * DynamoDB Cache
+    */
+    $region = "us-west-1";
+    $tableName = "sandbox-demo-cache";
+    $cache = new \RW\DynamoCache($tableName, [
+        "region" => $region,
+    ]);
 ```
 
 # Run unittest
 ```bash
 sh ./bin/go-test.sh
+```
+
+# DynamoDB Schema
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: (2-resources) DynamoDB Cache v1.0.0
+Parameters:
+  EnvironmentType:
+    Description: The environment type
+    Type: String
+    Default: sandbox
+    AllowedValues:
+      - production
+      - sandbox
+    ConstraintDescription: must be a production or sandbox
+
+  APP:
+    Description: APP Name
+    Type: String
+    AllowedPattern: "^[a-z0-9-]+$"
+    Default: "demo"
+    MinLength: 4
+    MaxLength: 30
+    
+Mappings:
+  BuildEnvironment:
+    sandbox:
+      "env": "sandbox"
+      "capacityUnits": 5
+    production:
+      "env": "production"
+      "capacityUnits": 5
+
+Resources:
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${EnvironmentType}-${APP}-cache"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: { "Fn::FindInMap" : [ "BuildEnvironment", { "Ref" : "EnvironmentType" }, "capacityUnits"]}
+        WriteCapacityUnits: { "Fn::FindInMap" : [ "BuildEnvironment", { "Ref" : "EnvironmentType" }, "capacityUnits"]}
+      TimeToLiveSpecification:
+        AttributeName: expiry
+        Enabled: true
 ```
