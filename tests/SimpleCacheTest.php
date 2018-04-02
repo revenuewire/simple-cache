@@ -141,11 +141,11 @@ trait SimpleCacheTest
             "f" => "F",
             "g" => "G",
         ];
-        $this->assertSame(true, self::$cache->setMultiple($data));
-        $this->assertSame($data, self::$cache->getMultiple(array_keys($data)));
+        $this->assertSame(true, self::$cache->setMultiple($data, 100));
+        $this->assertEquals($data, self::$cache->getMultiple(array_keys($data)));
 
         $this->assertSame(true, self::$cache->deleteMultiple(['a', 'd', 'f']));
-        $this->assertSame([
+        $this->assertEquals([
             "a" => null,
             "b" => "B",
             "c" => "C",
@@ -185,6 +185,30 @@ trait SimpleCacheTest
     public function testMultiError($keys)
     {
         $this->assertSame([], self::$cache->getMultiple($keys));
+    }
+
+    /**
+     * @expectedExceptionMessage TTL must only be integer greater than 0 or null.
+     * @expectedException \RW\SimpleCacheException
+     */
+    public function testMultiErrorWithWrongTTL()
+    {
+        $this->assertSame([], self::$cache->setMultiple([
+            "abc" => "abc",
+            "bcd" => "bcd"
+        ], "hg"));
+    }
+
+    /**
+     * @expectedExceptionMessage Invalid key. Only [a-zA-Z0-9_-] allowed.
+     * @expectedException \RW\SimpleCacheException
+     */
+    public function testMultiErrorWithWrongKey()
+    {
+        $this->assertSame([], self::$cache->setMultiple([
+            "abc" => "abc",
+            "bcd*" => "bcd"
+        ]));
     }
 
     /**
