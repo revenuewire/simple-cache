@@ -138,7 +138,7 @@ trait SimpleCacheTest
     {
         $k = "helloTTL";
         $v = "hello TTL";
-        $ttl = 5;
+        $ttl = 2;
 
         $this->assertSame(true, self::$cache->set($k, $v, $ttl));
         $this->assertSame($v, self::$cache->get($k));
@@ -185,6 +185,16 @@ trait SimpleCacheTest
         ], self::$cache->getMultiple(array_keys($data), "Default"));
 
         $this->assertSame("B", self::$cache->get('b'));
+    }
+
+    public function testLoad()
+    {
+        $test = [];
+        for ($i = 0; $i < 1000; $i++) {
+            $test[uniqid($i)] = uniqid($i, true);
+        }
+        $this->assertSame(true, self::$cache->setMultiple($test));
+        $this->assertEquals($test, self::$cache->getMultiple(array_keys($test)));
     }
 
     public function multiErrorProvider()
@@ -304,7 +314,5 @@ class DynamoCacheTest extends \PHPUnit\Framework\TestCase
             "region" => "us-west-1",
             "endpoint" => 'http://dynamodb:8000'
         ]);
-        //this to ensure we get to lastEvalutedKey section
-        self::$cache->setReadBatchLimit(2);
     }
 }
