@@ -82,8 +82,12 @@ class FileCache implements CacheInterface
             throw new SimpleCacheException("Invalid key. Only [a-zA-Z0-9_-] allowed.");
         }
 
-        if ($this->isValidTTL($ttl)) {
+        if (!$this->isValidTTL($ttl)) {
             throw new SimpleCacheException("TTL must only be integer greater than 0 or null.");
+        }
+
+        if (!$this->isValidValue($value)) {
+            throw new SimpleCacheException("Value cannot be empty.");
         }
 
         if ($ttl <= 0) {
@@ -130,29 +134,5 @@ class FileCache implements CacheInterface
     {
         array_map('unlink', glob($this->cacheDir . "/*"));
         return rmdir($this->cacheDir);
-    }
-
-    /**
-     * Determines whether an item is present in the cache.
-     *
-     * NOTE: It is recommended that has() is only to be used for cache warming type purposes
-     * and not to be used within your live applications operations for get/set, as this method
-     * is subject to a race condition where your has() will return true and immediately after,
-     * another script can remove it making the state of your app out of date.
-     *
-     * @param string $key The cache item key.
-     *
-     * @return bool
-     *
-     * @throws \Psr\SimpleCache\InvalidArgumentException
-     *   MUST be thrown if the $key string is not a legal value.
-     */
-    public function has($key)
-    {
-        if (!$this->isValidKey($key)) {
-            throw new SimpleCacheException("Invalid key. Only [a-zA-Z0-9_-] allowed.");
-        }
-
-        return ($this->get($key, null) !== null);
     }
 }

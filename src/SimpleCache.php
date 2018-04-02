@@ -4,6 +4,27 @@ namespace RW;
 trait SimpleCache
 {
     /**
+     * Determines whether an item is present in the cache.
+     *
+     * NOTE: It is recommended that has() is only to be used for cache warming type purposes
+     * and not to be used within your live applications operations for get/set, as this method
+     * is subject to a race condition where your has() will return true and immediately after,
+     * another script can remove it making the state of your app out of date.
+     *
+     * @param string $key The cache item key.
+     *
+     * @return bool
+     *
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     *   MUST be thrown if the $key string is not a legal value.
+     */
+    public function has($key)
+    {
+        $item = $this->get($key, null);
+        return ($item !== null);
+    }
+
+    /**
      * Obtains multiple cache items by their unique keys.
      *
      * @param iterable $keys A list of keys that can obtained in a single operation.
@@ -89,6 +110,17 @@ trait SimpleCache
      */
     private function isValidTTL($ttl)
     {
-        return ($ttl !== null && (!is_int($ttl) || $ttl <= 0));
+        return ($ttl === null || (is_int($ttl) && $ttl > 0));
+    }
+
+    /**
+     * Check if the value is empty
+     *
+     * @param $value
+     * @return bool
+     */
+    private function isValidValue($value)
+    {
+        return ($value !== null && trim($value) !== "");
     }
 }
