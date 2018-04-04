@@ -89,7 +89,7 @@ class DynamoCache implements CacheInterface
         }
         $item = $this->marshaler->unmarshalItem($result->get("Item"));
         if (!isset($item['expiry']) || $item['expiry'] >= $now) {
-            return $item['value'];
+            return unserialize($item['value']);
         }
 
         return $default;
@@ -119,13 +119,9 @@ class DynamoCache implements CacheInterface
             throw new SimpleCacheException("TTL must only be integer greater than 0 or null.");
         }
 
-        if (!$this->isValidValue($value)) {
-            throw new SimpleCacheException("Value cannot be empty.");
-        }
-
         $data = [
             "id" => $key,
-            "value" => $value,
+            "value" => serialize($value),
         ];
 
         if ($ttl > 0) {
@@ -264,13 +260,9 @@ class DynamoCache implements CacheInterface
                 throw new SimpleCacheException("Invalid key. Only [a-zA-Z0-9_-] allowed.");
             }
 
-            if (!$this->isValidValue($v)) {
-                throw new SimpleCacheException("Value cannot be empty.");
-            }
-
             $item = [
                 'id' => $k,
-                'value' => $v,
+                'value' => serialize($v),
             ];
             if (isset($expiry)) {
                 $item['expiry'] = $expiry;
@@ -329,7 +321,7 @@ class DynamoCache implements CacheInterface
 
             foreach ($results['Responses'][$this->table] as $response) {
                 $item = $this->marshaler->unmarshalItem($response);
-                $returnResults[$item['id']] = $item['value'];
+                $returnResults[$item['id']] = unserialize($item['value']);
             }
         }
 

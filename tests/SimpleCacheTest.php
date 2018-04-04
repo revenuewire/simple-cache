@@ -10,13 +10,19 @@ trait SimpleCacheTest
 {
     public function cacheSetProvider()
     {
+        $obj = new stdClass();
+        $obj->a = "a";
+        $obj->b = "b";
         return [
+            ["empty_string", "", true],
             ["key", "value1", true],
             ["key1", "value2", true],
             ["key_1", "value3", true],
             ["key-1", "value4", true],
             ["123", "value5", true],
             ["key1", "value6", true],
+            ["key.1", "value6", true],
+            ["array_test", ["a" => "b", "c" => "d"], true],
         ];
     }
 
@@ -75,25 +81,6 @@ trait SimpleCacheTest
     public function testSetWithWrongKey2($k, $v)
     {
         self::$cache->has($k);
-    }
-
-    public function cacheWrongValueProvider()
-    {
-        return [
-            ["key", ""],
-            ["key1", " "],
-            ["key2", null],
-        ];
-    }
-
-    /**
-     * @expectedException \RW\SimpleCacheException
-     * @expectedExceptionMessage Value cannot be empty.
-     * @dataProvider cacheWrongValueProvider
-     */
-    public function testSetWithWrongValue($k, $v)
-    {
-        self::$cache->set($k, $v);
     }
 
     /**
@@ -159,6 +146,7 @@ trait SimpleCacheTest
             "e" => "E",
             "f" => "F",
             "g" => "G",
+            "empty" => "",
         ];
         $this->assertSame(true, self::$cache->setMultiple($data, 100));
         $this->assertEquals($data, self::$cache->getMultiple(array_keys($data)));
@@ -172,6 +160,7 @@ trait SimpleCacheTest
             "e" => "E",
             "f" => null,
             "g" => "G",
+            "empty" => "",
         ], self::$cache->getMultiple(array_keys($data)));
 
         $this->assertSame([
@@ -182,6 +171,7 @@ trait SimpleCacheTest
             "e" => "E",
             "f" => "Default",
             "g" => "G",
+            "empty" => "",
         ], self::$cache->getMultiple(array_keys($data), "Default"));
 
         $this->assertSame("B", self::$cache->get('b'));
@@ -240,16 +230,45 @@ trait SimpleCacheTest
         ]));
     }
 
-    /**
-     * @expectedExceptionMessage Value cannot be empty.
-     * @expectedException \RW\SimpleCacheException
-     */
-    public function testMultiErrorWithWrongValue()
+    public function testObject()
     {
-        $this->assertSame([], self::$cache->setMultiple([
-            "abc" => "abc",
-            "bcd" => ""
-        ]));
+        $k = "object";
+        $v = new stdClass();
+        $v->a = "a";
+        $v->b = "b";
+
+        $this->assertSame(true, self::$cache->set($k, $v));
+
+        $o = self::$cache->get($k);
+        $this->assertEquals($v, self::$cache->get($k));
+        $this->assertSame($o->a, $v->a);
+        $this->assertSame($o->b, $v->b);
+
+        $this->assertSame(true, self::$cache->has($k));
+        $this->assertSame(true, self::$cache->delete($k));
+        $this->assertSame(null, self::$cache->get($k));
+        $this->assertSame(false, self::$cache->has($k));
+    }
+    public function testMultiObjects()
+    {
+        $hello = new stdClass();
+        $hello->hello = "Hello";
+        $hello->world = "World";
+
+        $date = new DateTime();
+        $date->setDate(2017, 06, 15);
+
+        $data = [
+            "hello" => $hello,
+            "date" => $date,
+        ];
+        $this->assertSame(true, self::$cache->setMultiple($data, 100));
+
+        $result = self::$cache->getMultiple(array_keys($data));
+        $this->assertSame($hello->hello, $result['hello']->hello);
+        $this->assertSame($hello->world, $result['hello']->world);
+
+        $this->assertSame($date->getTimestamp(), $result['date']->getTimestamp());
     }
 
     /**
