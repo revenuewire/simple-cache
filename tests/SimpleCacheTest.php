@@ -271,6 +271,20 @@ trait SimpleCacheTest
         $this->assertSame($date->getTimestamp(), $result['date']->getTimestamp());
     }
 
+    public function testNull()
+    {
+        $k = "null";
+        $v = null;
+        $this->assertSame(true, self::$cache->set($k, $v));
+        $this->assertSame($v, self::$cache->get($k));
+        $this->assertSame($v, self::$cache->get($k, false));
+        $this->assertSame(false, self::$cache->has($k));
+        $this->assertSame(true, self::$cache->delete($k));
+        $this->assertSame(null, self::$cache->get($k));
+        $this->assertSame(false, self::$cache->get($k, false));
+        $this->assertSame(false, self::$cache->has($k));
+    }
+
     /**
      * Last test
      */
