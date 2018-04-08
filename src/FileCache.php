@@ -53,7 +53,7 @@ class FileCache implements CacheInterface
         $item = json_decode($item, true);
 
         if (isset($item['expiry']) && ($item['expiry'] === 0 || $item['expiry'] >= $now)) {
-            return $item['value'];
+            return unserialize($item['value']);
         }
         if (isset($item['expiry']) && ($item['expiry'] < $now)) {
             @unlink($this->cacheDir . "/$key");
@@ -86,17 +86,13 @@ class FileCache implements CacheInterface
             throw new SimpleCacheException("TTL must only be integer greater than 0 or null.");
         }
 
-        if (!$this->isValidValue($value)) {
-            throw new SimpleCacheException("Value cannot be empty.");
-        }
-
         if ($ttl <= 0) {
             $expiry = 0;
         } else {
             $expiry = time() + $ttl;
         }
 
-        $item = json_encode(["value" => $value, "expiry" => $expiry]);
+        $item = json_encode(["value" => serialize($value), "expiry" => $expiry]);
 
         // Write to temp file first to ensure atomicity
         $tmp = $this->cacheDir . "/$key." . uniqid('', true) . '.tmp';

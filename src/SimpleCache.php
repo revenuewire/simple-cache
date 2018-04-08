@@ -100,7 +100,7 @@ trait SimpleCache
      */
     private function isValidKey($key)
     {
-        return (!empty($key) && ctype_alnum(str_replace(['-', '_'], '', $key)));
+        return (!empty($key) && ctype_alnum(str_replace(['-', '_', '.'], '', $key)));
     }
 
     /**
@@ -111,16 +111,5 @@ trait SimpleCache
     private function isValidTTL($ttl)
     {
         return ($ttl === null || (is_int($ttl) && $ttl > 0));
-    }
-
-    /**
-     * Check if the value is empty
-     *
-     * @param $value
-     * @return bool
-     */
-    private function isValidValue($value)
-    {
-        return ($value !== null && trim($value) !== "");
     }
 }

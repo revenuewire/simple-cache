@@ -68,10 +68,6 @@ class ArrayCache implements CacheInterface
             throw new SimpleCacheException("TTL must only be integer greater than 0 or null.");
         }
 
-        if (!$this->isValidValue($value)) {
-            throw new SimpleCacheException("Value cannot be empty.");
-        }
-
         $this->data[$key]['value'] = $value;
         if ($ttl <= 0) {
             $this->data[$key]['expiry'] = 0;

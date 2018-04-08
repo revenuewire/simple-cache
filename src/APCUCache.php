@@ -33,7 +33,7 @@ class APCUCache implements CacheInterface
             return $default;
         }
 
-        return $value;
+        return unserialize($value);
     }
 
     /**
@@ -60,15 +60,11 @@ class APCUCache implements CacheInterface
             throw new SimpleCacheException("TTL must only be integer greater than 0 or null.");
         }
 
-        if (!$this->isValidValue($value)) {
-            throw new SimpleCacheException("Value cannot be empty.");
-        }
-
         if ($ttl <= 0) {
             $ttl = 0;
         }
 
-        return apcu_store($key, $value, $ttl);
+        return apcu_store($key, serialize($value), $ttl);
     }
 
     /**
