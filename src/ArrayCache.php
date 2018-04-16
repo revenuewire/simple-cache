@@ -68,6 +68,10 @@ class ArrayCache implements CacheInterface
             throw new SimpleCacheException("TTL must only be integer greater than 0 or null.");
         }
 
+        if ($value === null) {
+            return false;
+        }
+
         $this->data[$key]['value'] = $value;
         if ($ttl <= 0) {
             $this->data[$key]['expiry'] = 0;
@@ -93,6 +97,10 @@ class ArrayCache implements CacheInterface
         if (!$this->isValidKey($key)) {
             throw new SimpleCacheException("Invalid key. Only [a-zA-Z0-9_-] allowed.");
         }
+        if (!isset($this->data[$key])) {
+            return false;
+        }
+
         unset($this->data[$key]);
         return true;
     }

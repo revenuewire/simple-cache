@@ -3,6 +3,7 @@ namespace RW;
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
+use Aws\Result;
 use Psr\SimpleCache\CacheInterface;
 
 class DynamoCache implements CacheInterface
@@ -119,6 +120,10 @@ class DynamoCache implements CacheInterface
             throw new SimpleCacheException("TTL must only be integer greater than 0 or null.");
         }
 
+        if ($value === null) {
+            return false;
+        }
+
         $data = [
             "id" => $key,
             "value" => serialize($value),
@@ -156,11 +161,12 @@ class DynamoCache implements CacheInterface
         $params = [
             'TableName' => $this->table,
             'Key' => [ "id" => $this->marshaler->marshalValue($key) ],
+            'ReturnValues' => "ALL_OLD",
         ];
 
-        $this->client->deleteItem($params);
-
-        return true;
+        /** @var $result Result */
+        $result = $this->client->deleteItem($params);
+        return ($result->get('Attributes') !== null);
     }
 
     /**
@@ -260,17 +266,23 @@ class DynamoCache implements CacheInterface
                 throw new SimpleCacheException("Invalid key. Only [a-zA-Z0-9_-] allowed.");
             }
 
-            $item = [
-                'id' => $k,
-                'value' => serialize($v),
-            ];
-            if (isset($expiry)) {
-                $item['expiry'] = $expiry;
-            }
+            if ($v !== null) {
+                $item = [
+                    'id' => $k,
+                    'value' => serialize($v),
+                ];
+                if (isset($expiry)) {
+                    $item['expiry'] = $expiry;
+                }
 
-            $batchData[] = ['PutRequest' => [
-                "Item" => $this->marshaler->marshalItem($item)
-            ]];
+                $batchData[] = ['PutRequest' => [
+                    "Item" => $this->marshaler->marshalItem($item)
+                ]];
+            }
+        }
+
+        if (count($batchData) <= 0) {
+            return false;
         }
 
         if (count($batchData) > 0) {

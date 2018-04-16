@@ -177,6 +177,15 @@ trait SimpleCacheTest
         $this->assertSame("B", self::$cache->get('b'));
     }
 
+    public function testMultiEmpty()
+    {
+        $data = [
+            "a" => null,
+            "b" => null,
+        ];
+        $this->assertSame(false, self::$cache->setMultiple($data, 100));
+    }
+
     public function testLoad()
     {
         $test = [];
@@ -275,14 +284,12 @@ trait SimpleCacheTest
     {
         $k = "null";
         $v = null;
-        $this->assertSame(true, self::$cache->set($k, $v));
+        $this->assertSame(false, self::$cache->set($k, $v));
         $this->assertSame($v, self::$cache->get($k));
-        $this->assertSame($v, self::$cache->get($k, false));
-        $this->assertSame(false, self::$cache->has($k));
-        $this->assertSame(true, self::$cache->delete($k));
-        $this->assertSame(null, self::$cache->get($k));
         $this->assertSame(false, self::$cache->get($k, false));
+        $this->assertSame("default", self::$cache->get($k, "default"));
         $this->assertSame(false, self::$cache->has($k));
+        $this->assertSame(false, self::$cache->delete($k));
     }
 
     /**

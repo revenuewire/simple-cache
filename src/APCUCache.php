@@ -60,6 +60,10 @@ class APCUCache implements CacheInterface
             throw new SimpleCacheException("TTL must only be integer greater than 0 or null.");
         }
 
+        if ($value === null) {
+            return false;
+        }
+
         if ($ttl <= 0) {
             $ttl = 0;
         }
