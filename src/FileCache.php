@@ -86,6 +86,10 @@ class FileCache implements CacheInterface
             throw new SimpleCacheException("TTL must only be integer greater than 0 or null.");
         }
 
+        if ($value === null) {
+            return false;
+        }
+
         if ($ttl <= 0) {
             $expiry = 0;
         } else {
@@ -116,6 +120,10 @@ class FileCache implements CacheInterface
     {
         if (!$this->isValidKey($key)) {
             throw new SimpleCacheException("Invalid key. Only [a-zA-Z0-9_-] allowed.");
+        }
+
+        if (!file_exists($this->cacheDir . "/$key")) {
+            return false;
         }
 
         return unlink($this->cacheDir . "/$key");

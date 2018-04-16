@@ -65,11 +65,15 @@ trait SimpleCache
      */
     public function setMultiple($values, $ttl = null)
     {
+        $result = false;
         foreach ($values as $k =>$v) {
-            $this->set($k, $v, $ttl);
+            //for multi-set, return false only if all inserts are failed.
+            if ($this->set($k, $v, $ttl)) {
+                $result = true;
+            }
         }
 
-        return true;
+        return $result;
     }
 
     /**
